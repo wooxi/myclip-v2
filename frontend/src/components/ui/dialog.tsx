@@ -52,15 +52,12 @@ function DialogContent({
   );
 }
 
-/** 头部：slate-50 底 + 底部分隔线（参考稿弹窗头样式） */
+/** 头部：一体式（无色块），标题 + 描述直接落在卡片底色上 */
 function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="dialog-header"
-      className={cn(
-        "-m-6 -mb-4 flex flex-col gap-1.5 rounded-t-2xl border-b border-slate-200 dark:border-slate-800 bg-slate-50 px-6 py-4 pb-4 text-left dark:bg-slate-900/60",
-        className,
-      )}
+      className={cn("flex flex-col gap-1.5 text-left", className)}
       {...props}
     />
   );

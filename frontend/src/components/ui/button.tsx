@@ -12,8 +12,8 @@ const buttonVariants = cva(
         default:
           "bg-primary text-primary-foreground shadow-sm shadow-indigo-500/20 hover:bg-indigo-500 active:bg-indigo-700",
         destructive:
-          // rose soft 语义（DESIGN.md）：soft bg + 同色系描边，与整体风格统一
-          "border border-rose-200/60 bg-rose-50 text-rose-600 shadow-xs hover:bg-rose-100 dark:border-rose-800/50 dark:bg-rose-950/60 dark:text-rose-300 dark:hover:bg-rose-950/80",
+          // 实底 rose：确认弹窗中与 outline 取消形成明确主次（专业系统惯例）
+          "bg-rose-600 text-white shadow-xs hover:bg-rose-500 dark:bg-rose-600 dark:hover:bg-rose-500",
         // slate-100 底 soft 按钮：hover slate-200/80
         outline:
           "border border-slate-200/80 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-xs hover:bg-slate-200/80 dark:hover:bg-slate-700",
