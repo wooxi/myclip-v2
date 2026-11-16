@@ -10,11 +10,11 @@ export function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   const units = ["KB", "MB", "GB"];
   let v = bytes;
-  let u = units[0];
+  let u = "B";
   let i = 0;
-  while (v >= 1024 && i < units.length - 1) {
+  while (v >= 1024 && i < units.length) {
     v /= 1024;
-    u = units[++i];
+    u = units[i++];
   }
   return `${v >= 100 ? Math.round(v) : v.toFixed(1)} ${u}`;
 }
