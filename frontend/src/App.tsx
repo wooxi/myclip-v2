@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { FilePlus2 } from "lucide-react";
 import { Toaster, toast } from "sonner";
 import { useRoomRoute } from "@/hooks/use-room-route";
 import { useTheme } from "@/hooks/use-theme";
@@ -92,6 +93,48 @@ export default function App() {
     },
     [room, ttl, config, prepend],
   );
+
+  // 全页级拖放：dragenter/leave 计数法 + fixed 覆盖层高亮，drop 统一走 handleFiles
+  const [dragActive, setDragActive] = useState(false);
+  const dragCounter = useRef(0);
+  useEffect(() => {
+    const hasFiles = (e: DragEvent) =>
+      Array.from(e.dataTransfer?.types ?? []).includes("Files");
+    const onDragEnter = (e: DragEvent) => {
+      if (!hasFiles(e)) return;
+      e.preventDefault();
+      dragCounter.current++;
+      setDragActive(true);
+    };
+    const onDragOver = (e: DragEvent) => {
+      if (!hasFiles(e)) return;
+      e.preventDefault();
+      if (e.dataTransfer) e.dataTransfer.dropEffect = "copy";
+    };
+    const onDragLeave = (e: DragEvent) => {
+      if (!hasFiles(e)) return;
+      dragCounter.current = Math.max(0, dragCounter.current - 1);
+      if (dragCounter.current === 0) setDragActive(false);
+    };
+    const onDrop = (e: DragEvent) => {
+      if (!hasFiles(e)) return;
+      e.preventDefault();
+      dragCounter.current = 0;
+      setDragActive(false);
+      const files = Array.from(e.dataTransfer?.files ?? []);
+      if (files.length) handleFiles(files);
+    };
+    document.addEventListener("dragenter", onDragEnter);
+    document.addEventListener("dragover", onDragOver);
+    document.addEventListener("dragleave", onDragLeave);
+    document.addEventListener("drop", onDrop);
+    return () => {
+      document.removeEventListener("dragenter", onDragEnter);
+      document.removeEventListener("dragover", onDragOver);
+      document.removeEventListener("dragleave", onDragLeave);
+      document.removeEventListener("drop", onDrop);
+    };
+  }, [handleFiles]);
 
   /** 空状态"粘贴剪贴板并发送"：文本直接提交，剪贴板文件直传 */
   const handlePasteSend = useCallback(async () => {
@@ -191,9 +234,9 @@ export default function App() {
         </div>
       </div>
 
-      {/* 主区 12 栏：composer 5 栏 sticky + stream 7 栏 */}
+      {/* 主区 12 栏：composer 5 栏 sticky + stream 7 栏（stretch 等高，空状态大区自动对齐） */}
       <main className="mx-auto w-full max-w-7xl flex-1 px-4 pb-8 pt-5 sm:px-6 sm:pt-7 lg:px-8">
-        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
           <section
             aria-label="发送"
             className={cn(
@@ -212,11 +255,13 @@ export default function App() {
             />
           </section>
 
-          <section aria-label="历史" className="min-w-0 lg:col-span-7">
+          <section
+            aria-label="历史"
+            className="flex min-w-0 flex-col lg:col-span-7"
+          >
             <h2 className="sr-only">历史条目</h2>
             <ItemList
               items={items}
-              loading={items === null}
               error={error}
               onDeleted={remove}
               onClearAll={handleClearAll}
@@ -229,6 +274,18 @@ export default function App() {
           </section>
         </div>
       </main>
+
+      {/* 全页级拖放高亮覆盖层（pointer-events-none，drop 由 document 监听接收） */}
+      {dragActive && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none fixed inset-0 z-40 flex items-center justify-center bg-indigo-500/10 backdrop-blur-[2px]"
+        >
+          <div className="rounded-2xl border-2 border-dashed border-indigo-500 bg-indigo-500/5 px-16 py-12">
+            <FilePlus2 className="size-12 text-indigo-500" />
+          </div>
+        </div>
+      )}
 
       <RoomDialog
         currentRoom={room}

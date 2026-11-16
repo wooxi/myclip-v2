@@ -39,7 +39,7 @@ export function InstallPrompt({ className }: { className?: string }) {
       onClick={() => void install()}
       title="安装 MyClip 到桌面或主屏幕"
       className={cn(
-        "inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200/80 bg-slate-100 px-2.5 text-xs font-medium text-slate-700 transition-colors duration-150 hover:bg-slate-200/80 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700",
+        "hidden h-9 cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200/80 bg-slate-100 px-2.5 text-xs font-medium text-slate-700 transition-colors duration-150 hover:bg-slate-200/80 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 sm:inline-flex",
         className,
       )}
     >

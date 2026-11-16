@@ -35,7 +35,7 @@ import { legacyCopyText } from "@/lib/clipboard";
 function KindBadge({ kind }: { kind: ItemKind }) {
   const map = {
     code: { icon: Terminal, label: "命令 / 代码", variant: "indigo" as const },
-    file: { icon: Paperclip, label: "文件附件", variant: "amber" as const },
+    file: { icon: Paperclip, label: "文件", variant: "amber" as const },
     link: { icon: Link2, label: "超链接", variant: "sky" as const },
     text: { icon: SquarePen, label: "文本", variant: "slate" as const },
   };

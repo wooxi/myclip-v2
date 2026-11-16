@@ -18,8 +18,9 @@ import { EmptyDropzone } from "./empty-dropzone";
 
 const FILTERS: { key: FilterGroup; label: string }[] = [
   { key: "all", label: "全部" },
-  { key: "text", label: "文本 / 代码" },
-  { key: "file", label: "文件与图片" },
+  { key: "text", label: "文本" },
+  { key: "code", label: "代码" },
+  { key: "file", label: "文件" },
   { key: "link", label: "链接" },
 ];
 
@@ -120,7 +121,6 @@ function FilterHeader({
 
 export function ItemList({
   items,
-  loading,
   error,
   onDeleted,
   onClearAll,
@@ -131,7 +131,6 @@ export function ItemList({
   onFiles,
 }: {
   items: Item[] | null;
-  loading: boolean;
   error: string | null;
   onDeleted: (id: string) => void;
   onClearAll: (ids: string[]) => void;
@@ -183,19 +182,15 @@ export function ItemList({
       />
 
       {filtered.length === 0 ? (
-        <EmptyDropzone onFiles={onFiles} empty={items.length === 0} loading={loading} />
+        <EmptyDropzone onFiles={onFiles} />
       ) : (
-        <>
-          <ul className="flex flex-col gap-3" aria-label="历史条目">
-            {filtered.map((item) => (
-              <li key={item.id}>
-                <ItemCard item={item} onDeleted={onDeleted} />
-              </li>
-            ))}
-          </ul>
-          {/* 有内容时的矮条拖放区：仍可拖入文件 */}
-          <EmptyDropzone onFiles={onFiles} empty={false} loading={false} />
-        </>
+        <ul className="flex flex-col gap-3" aria-label="历史条目">
+          {filtered.map((item) => (
+            <li key={item.id}>
+              <ItemCard item={item} onDeleted={onDeleted} />
+            </li>
+          ))}
+        </ul>
       )}
     </div>
   );

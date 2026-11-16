@@ -29,12 +29,10 @@ export function classifyItem(item: {
   return classifyText(item.content ?? "");
 }
 
-/** 筛选 tab 分组：text 组含文本与代码；file 组含文件图片；link 单列 */
-export type FilterGroup = "all" | "text" | "file" | "link";
+/** 筛选 tab 分组：text/code/file/link 各归各 tab（2026-11-16 手机端实测拆分） */
+export type FilterGroup = "all" | "text" | "code" | "file" | "link";
 
 export function inFilterGroup(kind: ItemKind, group: FilterGroup): boolean {
   if (group === "all") return true;
-  if (group === "text") return kind === "text" || kind === "code";
-  if (group === "file") return kind === "file";
-  return kind === "link";
+  return kind === group;
 }

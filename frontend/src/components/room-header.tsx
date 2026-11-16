@@ -45,7 +45,7 @@ function WsBadge({ status, ping }: { status: WsStatus; ping: number | null }) {
     <span
       title="WebSocket 实时同步状态"
       className={cn(
-        "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium",
+        "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2 py-1 text-xs font-medium sm:px-2.5",
         live ? tierText : "border-amber-200/70 bg-amber-50 text-amber-700 dark:border-amber-800/70 dark:bg-amber-950/60 dark:text-amber-300",
       )}
     >
@@ -58,7 +58,7 @@ function WsBadge({ status, ping }: { status: WsStatus; ping: number | null }) {
           )}
         />
       </span>
-      <span>{label}</span>
+      <span className="hidden sm:inline">{label}</span>
       {live && ping !== null && (
         <span className={cn("hidden font-mono text-[11px] md:inline", tierMs)}>
           {ping}ms
@@ -122,7 +122,7 @@ export function RoomHeader({
         <div className="flex min-w-0 items-center gap-2.5 sm:gap-3.5">
           <div className="flex shrink-0 items-center gap-2.5">
             <Logo className="size-9 shrink-0 rounded-xl shadow-sm" />
-            <div className="flex items-baseline gap-1.5">
+            <div className="hidden items-baseline gap-1.5 sm:flex">
               <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-white">
                 MyClip
               </span>
