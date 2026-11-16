@@ -106,6 +106,7 @@ class RestApiClient implements ApiClient {
     const q = new URLSearchParams({
       name: file.name,
       mime: file.type || "application/octet-stream",
+      size: String(file.size),
       // source 设备名：file 单请求走 query（API.md）
       device: detectDevice(),
     });

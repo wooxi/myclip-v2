@@ -117,8 +117,13 @@ app.post("/api/rooms/:room/file", async (c) => {
   const mime = c.req.query("mime") || "application/octet-stream";
   const ttl = parseTtl(c.req.query("ttl"));
   const device = sanitizeDevice(c.req.query("device"));
-  const declared = Number(c.req.query("size") || 0);
-  if (!Number.isFinite(declared) || declared <= 0 || declared > LIMITS.singleUploadLimit)
+  // size 可选：缺失时不预校验，流式上传后取 R2 实际大小（网关 100MB 上限自然兜底）
+  const sizeParam = c.req.query("size");
+  const declared = sizeParam === undefined || sizeParam === "" ? null : Number(sizeParam);
+  if (
+    declared !== null &&
+    (!Number.isFinite(declared) || declared <= 0 || declared > LIMITS.singleUploadLimit)
+  )
     return c.json({ error: "file too large for single-request upload, use chunked upload" }, 413);
   if (!c.req.raw.body) return badRequest(c, "body required");
 
@@ -126,7 +131,7 @@ app.post("/api/rooms/:room/file", async (c) => {
   const fileKey = `${room}/${itemId}/${name}`;
   const now = Date.now();
 
-  await c.env.FILES.put(fileKey, c.req.raw.body, {
+  const obj = await c.env.FILES.put(fileKey, c.req.raw.body, {
     httpMetadata: { contentType: mime },
   });
 
@@ -135,7 +140,7 @@ app.post("/api/rooms/:room/file", async (c) => {
     kind: "file",
     content: null,
     file_name: name,
-    file_size: declared,
+    file_size: declared ?? obj.size,
     mime,
     file_key: fileKey,
     source: device,
@@ -323,6 +328,13 @@ app.delete("/api/items/:id", async (c) => {
 // ---------- SPA 静态资源兜底 ----------
 
 app.get("*", (c) => c.env.ASSETS.fetch(c.req.raw));
+
+// ---------- 全局错误日志（进入 Workers Logs / observability） ----------
+
+app.onError((err, c) => {
+  console.error(`[error] ${c.req.method} ${c.req.path}:`, err instanceof Error ? `${err.name}: ${err.message}\n${err.stack}` : err);
+  return c.json({ error: "internal server error" }, 500);
+});
 
 // ---------- cron：每小时清理过期 ----------
 
