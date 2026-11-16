@@ -195,10 +195,10 @@ export function Composer({
   return (
     <section
       aria-label="发送内容"
-      className="overflow-hidden rounded-2xl border border-slate-200/90 bg-card shadow-xs transition-all duration-200 focus-within:border-indigo-500/60 focus-within:ring-2 focus-within:ring-indigo-500/20 dark:border-slate-800"
+      className="flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200/90 bg-card shadow-xs transition-all duration-200 focus-within:border-indigo-500/60 focus-within:ring-2 focus-within:ring-indigo-500/20 dark:border-slate-800 lg:max-h-[calc(100vh-6.5rem)]"
     >
       {/* 顶条 */}
-      <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/50 px-4 py-3 dark:border-slate-800/80 dark:bg-slate-900/50">
+      <div className="flex shrink-0 items-center justify-between border-b border-slate-100 bg-slate-50/50 px-4 py-3 dark:border-slate-800/80 dark:bg-slate-900/50">
         <div className="flex items-center gap-2">
           <span className="size-2 rounded-full bg-indigo-500" aria-hidden="true" />
           <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
@@ -228,8 +228,8 @@ export function Composer({
         </div>
       </div>
 
-      {/* 输入区 */}
-      <div className="p-4">
+      {/* 输入区：右列短时自动撑高，右列长时限高滚动 */}
+      <div className="min-h-0 flex-1 overflow-y-auto p-4">
         <label htmlFor="composer-input" className="sr-only">
           要发送的文本
         </label>
@@ -304,7 +304,7 @@ export function Composer({
       </div>
 
       {/* TTL 条 */}
-      <div className="flex items-center justify-between gap-2 border-t border-slate-100 bg-slate-50/80 px-4 py-2.5 dark:border-slate-800/80 dark:bg-slate-800/40">
+      <div className="flex shrink-0 items-center justify-between gap-2 border-t border-slate-100 bg-slate-50/80 px-4 py-2.5 dark:border-slate-800/80 dark:bg-slate-800/40">
         <div className="flex shrink-0 items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400" title="到期后自动从云端销毁">
           <Clock3 className="size-3.5" aria-hidden="true" />
           <span className="hidden sm:inline">过期销毁:</span>
@@ -334,7 +334,7 @@ export function Composer({
       </div>
 
       {/* 操作条 */}
-      <div className="flex items-center justify-between gap-3 border-t border-slate-100 bg-white p-3 dark:border-slate-800 dark:bg-slate-900 sm:px-4 sm:py-3">
+      <div className="flex shrink-0 items-center justify-between gap-3 border-t border-slate-100 bg-white p-3 dark:border-slate-800 dark:bg-slate-900 sm:px-4 sm:py-3">
         <input
           ref={fileInputRef}
           type="file"

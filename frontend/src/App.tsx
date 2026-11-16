@@ -240,8 +240,8 @@ export default function App() {
           <section
             aria-label="发送"
             className={cn(
-              "flex flex-col gap-4 lg:col-span-5 lg:sticky lg:top-24",
-              mobileTab === "stream" && "hidden md:block",
+              "flex flex-col gap-4 lg:col-span-5 lg:sticky lg:top-24 lg:max-h-[calc(100vh-6.5rem)]",
+              mobileTab === "stream" && "max-md:hidden",
             )}
           >
             <Composer
