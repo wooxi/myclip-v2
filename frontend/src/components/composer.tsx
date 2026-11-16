@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Clock3,
+  Clipboard,
   ClipboardPaste,
   CopyX,
   Link2,
@@ -211,8 +212,8 @@ export function Composer({
             onClick={() => void pasteFromClipboard()}
             className="inline-flex cursor-pointer items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-indigo-600 transition-colors duration-150 hover:bg-indigo-50 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:text-indigo-400 dark:hover:bg-indigo-950/50"
           >
-            <SquarePen className="size-3.5" aria-hidden="true" />
-            一键粘贴
+            <Clipboard className="size-3.5" aria-hidden="true" />
+            粘贴
           </button>
           {hasContent && (
             <button
@@ -322,7 +323,7 @@ export function Composer({
               className={cn(
                 "shrink-0 cursor-pointer rounded-full border px-2.5 py-1 text-xs font-medium transition-colors duration-150",
                 ttl === opt
-                  ? "border-slate-900 bg-slate-900 text-white shadow-xs dark:border-indigo-500 dark:bg-indigo-600"
+                  ? "border-indigo-600 bg-indigo-600 text-white shadow-xs"
                   : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300",
               )}
             >
@@ -359,6 +360,7 @@ export function Composer({
             <Button
               variant="ghost"
               size="lg"
+              title="读取剪贴板并直接发送"
               className="border border-emerald-200/60 bg-emerald-50 text-emerald-600 shadow-xs hover:bg-emerald-100 dark:border-emerald-800/50 dark:bg-emerald-950/60 dark:text-emerald-300 dark:hover:bg-emerald-950/80"
               onClick={onPasteSend}
             >

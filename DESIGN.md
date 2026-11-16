@@ -58,7 +58,7 @@
 
 页面区块顺序（desktop）：顶栏（logo 块 36px rounded-xl slate-900 底 + v2 角标 + #房间 pill + WS 状态徽标 ｜ 安装/分享/主题）→ 主区 12 栏 → footer（品牌名 · 一句话 · GitHub 链接）。
 
-- Composer 卡（左 5 栏）：类型识别徽标 + 一键粘贴/清空 → textarea(rows≈5) → 附件暂存列表 → 字符计数行 → TTL pill 条 → 操作条（选择文件 + indigo 主按钮带 ⌘↵ kbd）
+- Composer 卡（左 5 栏）：类型识别徽标 + 一键粘贴/清空 → textarea(rows≈5) → 附件暂存列表 → 字符计数行 → TTL pill 条 → 操作条（选择文件 + indigo 主按钮带 ⌘↵ kbd）。**2026-11-16 修订：TTL 选中态改为 indigo-600 底白字（light 与 dark 统一），不再用 slate-900**
 - Stream（右 7 栏）：筛选头部卡（全部/文本代码/文件图片/链接 tabs + 计数 + 搜索框 + 清空）→ 条目卡列表 / 空状态拖放区（双操作卡：上传文件 indigo 图标容器、粘贴发送 emerald 图标容器）
 - 条目卡：类型徽标（代码 indigo / 文件 amber / 链接 sky / 文本 slate）+ TTL 徽标（短 TTL amber，其余 slate）+ 来源设备与时间 → 内容体（文件行 ext 等宽图标块 + 下载按钮；链接卡 hover indigo；代码深底 pre；文本浅底 pre-wrap）→ 复制/删除操作
 

@@ -4,7 +4,7 @@ import type { WsStatus } from "@/api";
 import type { Theme } from "@/hooks/use-theme";
 import { cn } from "@/lib/utils";
 
-/** WS 状态徽标：emerald 圆点 + ping 外圈 + 状态文案 + 心跳延迟 ms */
+/** WS 状态徽标：圆点 + ping 外圈 + 状态文案 + 心跳延迟 ms（按 RTT 三档变色） */
 function WsBadge({ status, ping }: { status: WsStatus; ping: number | null }) {
   const live = status === "open" || status === "mock";
   const label =
@@ -15,33 +15,52 @@ function WsBadge({ status, ping }: { status: WsStatus; ping: number | null }) {
         : status === "connecting"
           ? "连接中"
           : "重连中";
+  // RTT 分档：良好 <200ms emerald；一般 200-600ms amber；高延迟 >600ms rose
+  const tier =
+    ping === null || ping < 200 ? "emerald" : ping <= 600 ? "amber" : "rose";
+  const tierText = {
+    emerald:
+      "border-emerald-200/70 bg-emerald-50 text-emerald-700 dark:border-emerald-800/70 dark:bg-emerald-950/60 dark:text-emerald-300",
+    amber:
+      "border-amber-200/70 bg-amber-50 text-amber-700 dark:border-amber-800/70 dark:bg-amber-950/60 dark:text-amber-300",
+    rose: "border-rose-200/70 bg-rose-50 text-rose-600 dark:border-rose-800/70 dark:bg-rose-950/60 dark:text-rose-300",
+  }[tier];
+  const tierPing = {
+    emerald: "bg-emerald-400",
+    amber: "bg-amber-400",
+    rose: "bg-rose-400",
+  }[tier];
+  const tierDot = {
+    emerald: "bg-emerald-500",
+    amber: "bg-amber-500",
+    rose: "bg-rose-500",
+  }[tier];
+  const tierMs = {
+    emerald:
+      "text-emerald-600/70 dark:text-emerald-400/70",
+    amber: "text-amber-600/70 dark:text-amber-400/70",
+    rose: "text-rose-600/70 dark:text-rose-400/70",
+  }[tier];
   return (
     <span
       title="WebSocket 实时同步状态"
       className={cn(
         "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium",
-        live
-          ? "border-emerald-200/70 bg-emerald-50 text-emerald-700 dark:border-emerald-800/70 dark:bg-emerald-950/60 dark:text-emerald-300"
-          : "border-amber-200/70 bg-amber-50 text-amber-700 dark:border-amber-800/70 dark:bg-amber-950/60 dark:text-amber-300",
+        live ? tierText : "border-amber-200/70 bg-amber-50 text-amber-700 dark:border-amber-800/70 dark:bg-amber-950/60 dark:text-amber-300",
       )}
     >
       <span className="relative flex h-2 w-2">
-        {live && (
-          <span
-            className="ws-ping-dot bg-emerald-400"
-            aria-hidden="true"
-          />
-        )}
+        {live && <span className={cn("ws-ping-dot", tierPing)} aria-hidden="true" />}
         <span
           className={cn(
             "relative inline-flex h-2 w-2 rounded-full",
-            live ? "bg-emerald-500" : "bg-amber-500",
+            live ? tierDot : "bg-amber-500",
           )}
         />
       </span>
       <span>{label}</span>
       {live && ping !== null && (
-        <span className="hidden font-mono text-[11px] text-emerald-600/70 md:inline dark:text-emerald-400/70">
+        <span className={cn("hidden font-mono text-[11px] md:inline", tierMs)}>
           {ping}ms
         </span>
       )}

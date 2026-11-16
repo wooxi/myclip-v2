@@ -83,7 +83,11 @@ function FilterHeader({
           onClick={() => setConfirmOpen(true)}
           title="清空当前房间所有记录"
           aria-label="清空当前房间"
-          className="cursor-pointer rounded-lg p-2 text-slate-400 transition-colors duration-150 hover:bg-rose-50 hover:text-rose-600 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:hover:bg-rose-950/50"
+          disabled={countAll === 0}
+          className={cn(
+            "cursor-pointer rounded-lg p-2 text-slate-400 transition-colors duration-150 hover:bg-rose-50 hover:text-rose-600 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:hover:bg-rose-950/50",
+            countAll === 0 && "cursor-default opacity-35",
+          )}
         >
           <Trash2 className="size-4" aria-hidden="true" />
         </button>

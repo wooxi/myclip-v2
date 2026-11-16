@@ -77,13 +77,8 @@ export function EmptyDropzone({
               e.target.value = "";
             }}
           />
-          <div className="flex size-16 items-center justify-center rounded-2xl bg-slate-100 text-slate-300 transition-all duration-200 group-hover:scale-105 group-hover:bg-indigo-50 group-hover:text-indigo-400 dark:bg-slate-800 dark:text-slate-600 dark:group-hover:bg-indigo-950/80 dark:group-hover:text-indigo-400">
-            <FilePlus2 className="size-8" aria-hidden="true" />
-          </div>
-          <div className="flex gap-2 opacity-70 transition-opacity group-hover:opacity-100">
-            <div className="size-2 rounded-full bg-slate-300 dark:bg-slate-700" />
-            <div className="size-2 rounded-full bg-slate-300 dark:bg-slate-700" />
-            <div className="size-2 rounded-full bg-slate-300 dark:bg-slate-700" />
+          <div className="flex size-20 items-center justify-center rounded-2xl bg-slate-100 text-slate-300 transition-all duration-200 group-hover:scale-105 group-hover:bg-indigo-50 group-hover:text-indigo-400 dark:bg-slate-800 dark:text-slate-700 dark:group-hover:bg-indigo-950/80 dark:group-hover:text-indigo-400">
+            <FilePlus2 className="size-10" aria-hidden="true" />
           </div>
         </label>
       ) : null}
