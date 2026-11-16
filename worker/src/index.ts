@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { LIMITS, type Env } from "./env";
-import { id, sanitizeFileName, resolveRoom, parseTtl, toItem, type ItemRow } from "./util";
+import { id, sanitizeFileName, sanitizeDevice, resolveRoom, parseTtl, toItem, type ItemRow } from "./util";
 import { RoomDO } from "./room";
 
 export { RoomDO };
@@ -59,7 +59,7 @@ app.get("/api/rooms/:room/items", async (c) => {
   if (!room) return badRequest(c, "invalid room");
   const now = Date.now();
   const { results } = await c.env.DB.prepare(
-    `SELECT id, kind, content, file_name, file_size, mime, file_key, expire_at, created_at
+    `SELECT id, kind, content, file_name, file_size, mime, file_key, source, expire_at, created_at
      FROM items WHERE room = ? AND status = 'ready' AND (expire_at IS NULL OR expire_at > ?)
      ORDER BY created_at DESC LIMIT ?`
   )
@@ -71,7 +71,7 @@ app.get("/api/rooms/:room/items", async (c) => {
 app.post("/api/rooms/:room/text", async (c) => {
   const room = resolveRoom(c.req.param("room"));
   if (!room) return badRequest(c, "invalid room");
-  let body: { content?: unknown; ttl?: unknown };
+  let body: { content?: unknown; ttl?: unknown; device?: unknown };
   try {
     body = await c.req.json();
   } catch {
@@ -79,6 +79,7 @@ app.post("/api/rooms/:room/text", async (c) => {
   }
   const content = typeof body.content === "string" ? body.content : null;
   if (content === null || content.trim() === "") return badRequest(c, "content required");
+  const device = sanitizeDevice(body.device);
   const bytes = new TextEncoder().encode(content).length;
   if (bytes > LIMITS.textLimit) return c.json({ error: "text too large" }, 413);
   const ttl = parseTtl(body.ttl);
@@ -94,14 +95,15 @@ app.post("/api/rooms/:room/text", async (c) => {
     file_size: bytes,
     mime: null,
     file_key: null,
+    source: device,
     expire_at: ttl ? now + ttl * 1000 : null,
     created_at: now,
   };
   await c.env.DB.prepare(
-    `INSERT INTO items (id, room, kind, content, file_name, file_size, mime, file_key, status, upload_id, expire_at, created_at)
-     VALUES (?, ?, 'text', ?, NULL, ?, NULL, NULL, 'ready', NULL, ?, ?)`
+    `INSERT INTO items (id, room, kind, content, file_name, file_size, mime, file_key, source, status, upload_id, expire_at, created_at)
+     VALUES (?, ?, 'text', ?, NULL, ?, NULL, NULL, ?, 'ready', NULL, ?, ?)`
   )
-    .bind(item.id, room, content, bytes, item.expire_at, now)
+    .bind(item.id, room, content, bytes, device, item.expire_at, now)
     .run();
   broadcast(c, room, { type: "new", item: toItem(item) });
   return c.json({ item: toItem(item) }, 201);
@@ -114,6 +116,7 @@ app.post("/api/rooms/:room/file", async (c) => {
   const name = sanitizeFileName(c.req.query("name") ?? "unnamed");
   const mime = c.req.query("mime") || "application/octet-stream";
   const ttl = parseTtl(c.req.query("ttl"));
+  const device = sanitizeDevice(c.req.query("device"));
   const declared = Number(c.req.query("size") || 0);
   if (!Number.isFinite(declared) || declared <= 0 || declared > LIMITS.singleUploadLimit)
     return c.json({ error: "file too large for single-request upload, use chunked upload" }, 413);
@@ -135,14 +138,15 @@ app.post("/api/rooms/:room/file", async (c) => {
     file_size: declared,
     mime,
     file_key: fileKey,
+    source: device,
     expire_at: ttl ? now + ttl * 1000 : null,
     created_at: now,
   };
   await c.env.DB.prepare(
-    `INSERT INTO items (id, room, kind, content, file_name, file_size, mime, file_key, status, upload_id, expire_at, created_at)
-     VALUES (?, ?, 'file', NULL, ?, ?, ?, ?, 'ready', NULL, ?, ?)`
+    `INSERT INTO items (id, room, kind, content, file_name, file_size, mime, file_key, source, status, upload_id, expire_at, created_at)
+     VALUES (?, ?, 'file', NULL, ?, ?, ?, ?, ?, 'ready', NULL, ?, ?)`
   )
-    .bind(itemId, room, name, declared, mime, fileKey, item.expire_at, now)
+    .bind(itemId, room, name, declared, mime, fileKey, device, item.expire_at, now)
     .run();
   broadcast(c, room, { type: "new", item: toItem(item) });
   return c.json({ item: toItem(item) }, 201);
@@ -153,7 +157,7 @@ app.post("/api/rooms/:room/file", async (c) => {
 app.post("/api/rooms/:room/upload/init", async (c) => {
   const room = resolveRoom(c.req.param("room"));
   if (!room) return badRequest(c, "invalid room");
-  let body: { fileName?: unknown; size?: unknown; mime?: unknown; ttl?: unknown };
+  let body: { fileName?: unknown; size?: unknown; mime?: unknown; ttl?: unknown; device?: unknown };
   try {
     body = await c.req.json();
   } catch {
@@ -167,6 +171,7 @@ app.post("/api/rooms/:room/upload/init", async (c) => {
   const name = sanitizeFileName(typeof body.fileName === "string" ? body.fileName : "unnamed");
   const mime = typeof body.mime === "string" && body.mime ? body.mime : "application/octet-stream";
   const ttl = parseTtl(body.ttl);
+  const device = sanitizeDevice(body.device);
 
   const itemId = id();
   const fileKey = `${room}/${itemId}/${name}`;
@@ -175,10 +180,10 @@ app.post("/api/rooms/:room/upload/init", async (c) => {
   });
   const now = Date.now();
   await c.env.DB.prepare(
-    `INSERT INTO items (id, room, kind, content, file_name, file_size, mime, file_key, status, upload_id, expire_at, created_at)
-     VALUES (?, ?, 'file', NULL, ?, ?, ?, ?, 'pending', ?, ?, ?)`
+    `INSERT INTO items (id, room, kind, content, file_name, file_size, mime, file_key, source, status, upload_id, expire_at, created_at)
+     VALUES (?, ?, 'file', NULL, ?, ?, ?, ?, ?, 'pending', ?, ?, ?)`
   )
-    .bind(itemId, room, name, size, mime, fileKey, mp.uploadId, ttl ? now + ttl * 1000 : null, now)
+    .bind(itemId, room, name, size, mime, fileKey, device, mp.uploadId, ttl ? now + ttl * 1000 : null, now)
     .run();
   return c.json({ itemId, uploadId: mp.uploadId, partSize: 16 * 1024 * 1024 }, 201);
 });
@@ -220,7 +225,7 @@ app.post("/api/rooms/:room/upload/:uploadId/complete", async (c) => {
     return badRequest(c, "invalid part entry");
 
   const row = await c.env.DB.prepare(
-    `SELECT id, room, kind, content, file_name, file_size, mime, file_key, status, upload_id, expire_at, created_at
+    `SELECT id, room, kind, content, file_name, file_size, mime, file_key, source, status, upload_id, expire_at, created_at
      FROM items WHERE upload_id = ? AND room = ? AND status = 'pending'`
   )
     .bind(c.req.param("uploadId"), room)

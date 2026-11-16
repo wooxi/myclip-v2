@@ -1,59 +1,60 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-/* ---------- shadcn/ui zinc tokens（Tailwind v4 / oklch） ---------- */
+/* ---------- shadcn/ui slate+indigo tokens（DESIGN.md 锁定令牌表，Tailwind v4） ---------- */
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --radius: 0.65rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.141 0.005 285.823);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.141 0.005 285.823);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.141 0.005 285.823);
-  --primary: oklch(0.21 0.006 285.885);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.967 0.001 286.375);
-  --secondary-foreground: oklch(0.21 0.006 285.885);
-  --muted: oklch(0.967 0.001 286.375);
-  --muted-foreground: oklch(0.552 0.016 285.938);
-  --accent: oklch(0.967 0.001 286.375);
-  --accent-foreground: oklch(0.21 0.006 285.885);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(0.92 0.004 286.32);
-  --input: oklch(0.92 0.004 286.32);
-  --ring: oklch(0.705 0.015 286.067);
+  --radius: 0.75rem;
+  --background: #f1f5f9; /* slate-100 */
+  --foreground: #0f172a; /* slate-900 */
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+  --primary: #4f46e5; /* indigo-600 */
+  --primary-foreground: #ffffff;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #0f172a;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b; /* slate-500 */
+  --accent: #f1f5f9;
+  --accent-foreground: #0f172a;
+  --destructive: #e11d48; /* rose-600 */
+  --destructive-foreground: #ffffff;
+  --border: #e2e8f0; /* slate-200 */
+  --input: #e2e8f0;
+  --ring: #6366f1; /* indigo-500 */
 }
 
 .dark {
-  --background: oklch(0.141 0.005 285.823);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.21 0.006 285.885);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.21 0.006 285.885);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.92 0.004 286.32);
-  --primary-foreground: oklch(0.21 0.006 285.885);
-  --secondary: oklch(0.274 0.006 286.033);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.274 0.006 286.033);
-  --muted-foreground: oklch(0.705 0.015 286.067);
-  --accent: oklch(0.274 0.006 286.033);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.552 0.016 285.938);
+  --background: #020617; /* slate-950 */
+  --foreground: #f1f5f9; /* slate-100 */
+  --card: #0f172a; /* slate-900 */
+  --card-foreground: #f1f5f9;
+  --popover: #0f172a;
+  --popover-foreground: #f1f5f9;
+  --primary: #4f46e5; /* indigo-600 */
+  --primary-foreground: #ffffff;
+  --secondary: #1e293b; /* slate-800 */
+  --secondary-foreground: #f1f5f9;
+  --muted: #1e293b;
+  --muted-foreground: #94a3b8; /* slate-400 */
+  --accent: #1e293b;
+  --accent-foreground: #f1f5f9;
+  --destructive: #e11d48;
+  --destructive-foreground: #ffffff;
+  --border: #1e293b; /* slate-800 */
+  --input: #1e293b;
+  --ring: #6366f1;
 }
 
 @theme inline {
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  /* DESIGN.md 圆角阶梯：徽标 6px / 按钮与输入 12px / 卡片弹窗 16px */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -73,6 +74,12 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  /* DESIGN.md 字体栈 */
+  --font-sans:
+    Inter, -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei",
+    sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas,
+    monospace;
 }
 
 @layer base {
@@ -89,25 +96,74 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family:
-      system-ui,
-      -apple-system,
-      "Segoe UI",
-      Roboto,
-      "PingFang SC",
-      "Hiragino Sans GB",
-      "Microsoft YaHei",
-      sans-serif;
+    font-family: var(--font-sans);
   }
 
-  /* focus-visible 统一交给 ring；目标尺寸最小 24px 由组件保证 */
   ::selection {
-    @apply bg-primary/20;
+    @apply bg-indigo-500 text-white;
   }
 }
 
-/* ---------- 自托管场景下的实用工具 ---------- */
-/* 等宽展示文本条目 */
-.font-mono-text {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+/* ---------- 滚动条（DESIGN.md：6px、thumb rgba(156,163,175,.4)） ---------- */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.4);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.6);
+}
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.4) transparent;
+}
+
+/* 横向工具条隐藏滚动条（TTL / 筛选 tabs 移动端横滚） */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* ---------- 动效基线：装饰动效 ≤200ms，尊重系统减弱动效偏好（ping 心跳点除外） ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  /* WS 心跳点为状态指示（非装饰），保留 */
+  .ws-ping-dot::before {
+    animation-duration: 1.5s !important;
+    animation-iteration-count: infinite !important;
+  }
+}
+
+/* WS 状态点外圈（emerald-400 ping） */
+.ws-ping-dot {
+  position: absolute;
+  display: inline-flex;
+  height: 100%;
+  width: 100%;
+  border-radius: 9999px;
+  opacity: 0.75;
+  animation: ws-ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+@keyframes ws-ping {
+  75%,
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
 }

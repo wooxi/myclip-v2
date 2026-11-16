@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS items (
   file_size   INTEGER,
   mime        TEXT,
   file_key    TEXT,
+  source      TEXT,
   status      TEXT NOT NULL DEFAULT 'ready' CHECK (status IN ('pending', 'ready')),
   upload_id   TEXT,
   expire_at   INTEGER,

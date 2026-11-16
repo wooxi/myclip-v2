@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 type Theme = "system" | "light" | "dark";
+export type { Theme };
 const KEY = "myclip-theme";
 
 /** 主题：三态切换（system/light/dark），默认暗色优先 */

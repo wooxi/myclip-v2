@@ -42,9 +42,17 @@ export class RoomDO implements DurableObject {
     return new Response("not found", { status: 404 });
   }
 
-  // 客户端心跳：回 pong 保持活性
-  async webSocketMessage(ws: WebSocket): Promise<void> {
-    ws.send(JSON.stringify({ type: "pong" }));
+  // 客户端心跳：ping(t) → pong(t) 回声供前端计算 RTT
+  async webSocketMessage(ws: WebSocket, message: string | ArrayBuffer): Promise<void> {
+    if (typeof message !== "string") return;
+    try {
+      const data = JSON.parse(message) as { type?: string; t?: number };
+      if (data.type === "ping") {
+        ws.send(JSON.stringify({ type: "pong", t: data.t }));
+      }
+    } catch {
+      // 非 JSON 消息忽略
+    }
   }
 
   async webSocketClose(ws: WebSocket): Promise<void> {

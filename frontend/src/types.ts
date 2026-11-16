@@ -7,6 +7,7 @@ export interface Item {
   fileSize?: number;
   mime?: string;
   previewable: boolean;
+  source?: string; // 来源设备显示名（≤64 字符，服务端截断，如 "Chrome · macOS"）
   expireAt: number | null;
   createdAt: number;
 }

@@ -11,10 +11,13 @@ interface Item {
   fileSize?: number;     // bytes
   mime?: string;
   previewable: boolean;  // 图片/视频/音频/文本 = true
+  source?: string;       // 来源设备显示名（≤64 字符，如 "Chrome · macOS"），前端提交时派生
   expireAt: number | null; // unix ms，null = 永久
   createdAt: number;     // unix ms
 }
 ```
+
+**source 字段**：text 走 body 的 `device`；file 单请求走 query `?device=`；分片 init 走 body 的 `device`。服务端截断至 64 字符，空串存 null。
 
 ## REST
 

@@ -10,26 +10,34 @@ export function useRoomItems(room: string) {
   const [items, setItems] = useState<Item[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [wsStatus, setWsStatus] = useState<WsStatus>("connecting");
+  /** 心跳往返延迟 ms（服务端支持 ping→pong 回声时上报） */
+  const [wsPing, setWsPing] = useState<number | null>(null);
 
   useEffect(() => {
     setItems(null);
     setError(null);
+    setWsPing(null);
     let alive = true;
 
-    const unsub = api.subscribe(room, (ev) => {
-      if (ev.type === "new") {
-        // 收到广播的提交者已在列表里（提交时乐观插入），按 id 去重
-        setItems((prev) => {
-          const list = prev ?? [];
-          if (list.some((it) => it.id === ev.item.id)) return list;
-          return [ev.item, ...list];
-        });
-      } else if (ev.type === "delete" || ev.type === "expire") {
-        setItems((prev) =>
-          (prev ?? []).filter((it) => it.id !== ev.id),
-        );
-      }
-    }, setWsStatus);
+    const unsub = api.subscribe(
+      room,
+      (ev) => {
+        if (ev.type === "new") {
+          // 收到广播的提交者已在列表里（提交时乐观插入），按 id 去重
+          setItems((prev) => {
+            const list = prev ?? [];
+            if (list.some((it) => it.id === ev.item.id)) return list;
+            return [ev.item, ...list];
+          });
+        } else if (ev.type === "delete" || ev.type === "expire") {
+          setItems((prev) => (prev ?? []).filter((it) => it.id !== ev.id));
+        }
+      },
+      setWsStatus,
+      (ms) => {
+        if (alive) setWsPing(ms);
+      },
+    );
 
     api
       .listItems(room)
@@ -59,5 +67,5 @@ export function useRoomItems(room: string) {
     setItems((prev) => (prev ?? []).filter((it) => it.id !== id));
   };
 
-  return { items, error, wsStatus, prepend, remove };
+  return { items, error, wsStatus, wsPing, prepend, remove };
 }

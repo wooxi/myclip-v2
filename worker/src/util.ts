@@ -39,6 +39,12 @@ export function parseTtl(ttl: unknown): number | null {
   return n > 0 ? n : null;
 }
 
+export function sanitizeDevice(raw: unknown): string | null {
+  if (typeof raw !== "string") return null;
+  const s = raw.trim().slice(0, 64);
+  return s === "" ? null : s;
+}
+
 export interface ItemRow {
   id: string;
   kind: "text" | "file";
@@ -47,6 +53,7 @@ export interface ItemRow {
   file_size: number | null;
   mime: string | null;
   file_key: string | null;
+  source?: string | null;
   status?: "pending" | "ready";
   upload_id?: string | null;
   expire_at: number | null;
@@ -62,6 +69,7 @@ export function toItem(i: ItemRow) {
     fileSize: i.file_size ?? undefined,
     mime: i.mime ?? undefined,
     previewable: i.kind === "file" ? isPreviewable(i.mime) : false,
+    source: i.source ?? undefined,
     expireAt: i.expire_at,
     createdAt: i.created_at,
   };

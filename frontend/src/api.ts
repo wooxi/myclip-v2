@@ -10,6 +10,7 @@
 
 import type { Item } from "./types";
 import { DEFAULT_CONFIG, currentConfig, type AppConfig } from "./app-config";
+import { detectDevice } from "./lib/device";
 
 export type { Item };
 
@@ -49,11 +50,12 @@ export interface ApiClient {
   fileUrl(room: string, item: Item): string;
   /** DELETE /api/items/:id */
   deleteItem(id: string): Promise<void>;
-  /** 页面级 WebSocket：返回取消订阅函数 */
+  /** 页面级 WebSocket：返回取消订阅函数；onPing 上报心跳往返延迟 ms（服务端不支持回声时不上报） */
   subscribe(
     room: string,
     onEvent: (ev: WsEvent) => void,
     onStatus?: (s: WsStatus) => void,
+    onPing?: (ms: number) => void,
   ): () => void;
   /** 是否为 mock 模式（UI 显示徽标用） */
   readonly isMock: boolean;
@@ -92,7 +94,8 @@ class RestApiClient implements ApiClient {
     const res = await fetch(`/api/rooms/${encodeURIComponent(room)}/text`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify(body),
+      // source 设备名：text 走 body 的 device（API.md），调用方未带时自动派生
+      body: JSON.stringify({ device: detectDevice(), ...body }),
     });
     if (!res.ok) throw await toError(res);
     const data = (await res.json()) as { item: Item };
@@ -103,6 +106,8 @@ class RestApiClient implements ApiClient {
     const q = new URLSearchParams({
       name: file.name,
       mime: file.type || "application/octet-stream",
+      // source 设备名：file 单请求走 query（API.md）
+      device: detectDevice(),
     });
     if (ttl !== null) q.set("ttl", String(ttl));
     const res = await fetch(
@@ -133,6 +138,8 @@ class RestApiClient implements ApiClient {
           fileName: file.name,
           size: file.size,
           mime: file.type || "application/octet-stream",
+          // source 设备名：分片 init 走 body 的 device（API.md）
+          device: detectDevice(),
           ...(ttl !== null ? { ttl } : {}),
         }),
         signal: ctrl.signal,
@@ -201,11 +208,24 @@ class RestApiClient implements ApiClient {
     room: string,
     onEvent: (ev: WsEvent) => void,
     onStatus?: (s: WsStatus) => void,
+    onPing?: (ms: number) => void,
   ): () => void {
     // 断线 3s 自动重连
     let ws: WebSocket | null = null;
     let timer: ReturnType<typeof setTimeout> | null = null;
+    let pingTimer: ReturnType<typeof setInterval> | null = null;
+    let pingSentAt = 0;
     let disposed = false;
+
+    const startPing = () => {
+      // 心跳：30s 一次应用层 ping，服务端回声 pong 后按往返耗时上报延迟
+      if (pingTimer) clearInterval(pingTimer);
+      pingTimer = setInterval(() => {
+        if (ws?.readyState !== WebSocket.OPEN) return;
+        pingSentAt = Date.now();
+        ws.send(JSON.stringify({ type: "ping", t: pingSentAt }));
+      }, 30_000);
+    };
 
     const connect = () => {
       if (disposed) return;
@@ -214,10 +234,19 @@ class RestApiClient implements ApiClient {
       ws = new WebSocket(
         `${proto}//${location.host}/api/rooms/${encodeURIComponent(room)}/ws`,
       );
-      ws.onopen = () => onStatus?.("open");
+      ws.onopen = () => {
+        onStatus?.("open");
+        startPing();
+      };
       ws.onmessage = (ev) => {
         try {
-          onEvent(JSON.parse(ev.data as string) as WsEvent);
+          const data = JSON.parse(ev.data as string) as Record<string, unknown>;
+          if (data.type === "pong" && pingSentAt > 0) {
+            onPing?.(Date.now() - pingSentAt);
+            pingSentAt = 0;
+            return;
+          }
+          onEvent(data as unknown as WsEvent);
         } catch {
           /* 忽略无法解析的帧 */
         }
@@ -235,6 +264,7 @@ class RestApiClient implements ApiClient {
     return () => {
       disposed = true;
       if (timer) clearTimeout(timer);
+      if (pingTimer) clearInterval(pingTimer);
       ws?.close();
     };
   }
@@ -341,6 +371,7 @@ class MockApiClient implements ApiClient {
       kind: "text",
       content: body.content,
       previewable: true,
+      source: detectDevice(),
       expireAt: mockExpire(body.ttl ?? null),
       createdAt: Date.now(),
     };
@@ -360,6 +391,7 @@ class MockApiClient implements ApiClient {
         file.type || "application/octet-stream",
         file.name,
       ),
+      source: detectDevice(),
       expireAt: mockExpire(ttl),
       createdAt: Date.now(),
     };
@@ -389,6 +421,7 @@ class MockApiClient implements ApiClient {
           file.type || "application/octet-stream",
           file.name,
         ),
+        source: detectDevice(),
         expireAt: mockExpire(ttl),
         createdAt: Date.now(),
       };
@@ -438,7 +471,9 @@ class MockApiClient implements ApiClient {
     room: string,
     onEvent: (ev: WsEvent) => void,
     onStatus?: (s: WsStatus) => void,
+    onPing?: (ms: number) => void,
   ): () => void {
+    void onPing;
     onStatus?.("mock");
     // 本标签页提交 + 跨标签页广播，两条路径统一转发
     const ch = new BroadcastChannel(MOCK_CHANNEL);

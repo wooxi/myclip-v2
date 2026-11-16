@@ -1,15 +1,11 @@
-import { Hash, MonitorSmartphone, MoonStar, Share2, Sun, Wifi, WifiOff } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { ClipboardCheck, ChevronDown, Moon, Share2, Sun } from "lucide-react";
 import type { WsStatus } from "@/api";
+import type { Theme } from "@/hooks/use-theme";
+import { cn } from "@/lib/utils";
 
-function WsBadge({ status }: { status: WsStatus }) {
+/** WS 状态徽标：emerald 圆点 + ping 外圈 + 状态文案 + 心跳延迟 ms */
+function WsBadge({ status, ping }: { status: WsStatus; ping: number | null }) {
+  const live = status === "open" || status === "mock";
   const label =
     status === "open"
       ? "已连接"
@@ -17,86 +13,150 @@ function WsBadge({ status }: { status: WsStatus }) {
         ? "演示"
         : status === "connecting"
           ? "连接中"
-          : "离线重连中";
-  const Icon = status === "closed" ? WifiOff : status === "open" ? Wifi : Wifi;
+          : "重连中";
   return (
-    <Badge variant={status === "open" || status === "mock" ? "muted" : "destructive"}>
-      <Icon className="size-3" aria-hidden="true" />
-      {label}
-    </Badge>
+    <span
+      title="WebSocket 实时同步状态"
+      className={cn(
+        "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium",
+        live
+          ? "border-emerald-200/70 bg-emerald-50 text-emerald-700 dark:border-emerald-800/70 dark:bg-emerald-950/60 dark:text-emerald-300"
+          : "border-amber-200/70 bg-amber-50 text-amber-700 dark:border-amber-800/70 dark:bg-amber-950/60 dark:text-amber-300",
+      )}
+    >
+      <span className="relative flex h-2 w-2">
+        {live && (
+          <span
+            className="ws-ping-dot bg-emerald-400"
+            aria-hidden="true"
+          />
+        )}
+        <span
+          className={cn(
+            "relative inline-flex h-2 w-2 rounded-full",
+            live ? "bg-emerald-500" : "bg-amber-500",
+          )}
+        />
+      </span>
+      <span>{label}</span>
+      {live && ping !== null && (
+        <span className="hidden font-mono text-[11px] text-emerald-600/70 md:inline dark:text-emerald-400/70">
+          {ping}ms
+        </span>
+      )}
+    </span>
+  );
+}
+
+/** 顶栏右侧 slate-100 底 soft 按钮（12px 圆角） */
+function HeaderButton({
+  onClick,
+  title,
+  children,
+}: {
+  onClick: () => void;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      className="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200/80 bg-slate-100 px-2.5 text-xs font-medium text-slate-700 transition-colors duration-150 hover:bg-slate-200/80 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 sm:px-3"
+    >
+      {children}
+    </button>
   );
 }
 
 export function RoomHeader({
   room,
   wsStatus,
-  isMock,
+  wsPing,
   theme,
   onThemeChange,
   onSwitchRoom,
   onShare,
+  installSlot,
 }: {
   room: string;
   wsStatus: WsStatus;
-  isMock: boolean;
-  theme: "system" | "light" | "dark";
-  onThemeChange: (t: "system" | "light" | "dark") => void;
+  wsPing: number | null;
+  theme: Theme;
+  onThemeChange: (t: Theme) => void;
   onSwitchRoom: () => void;
   onShare: () => void;
+  /** PWA 安装按钮（不可安装时为 null） */
+  installSlot?: React.ReactNode;
 }) {
+  const isDark =
+    theme === "dark" ||
+    (theme === "system" &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches);
+
   return (
-    <header className="sticky top-0 z-30 border-b border-border bg-background/90 backdrop-blur">
-      <div className="mx-auto flex h-12 max-w-5xl items-center gap-2 px-3">
-        <span className="font-semibold tracking-tight" aria-hidden="true">
-          MyClip
-        </span>
-        {isMock && <Badge variant="outline">演示数据</Badge>}
+    <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/85 backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/85">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-2 px-4 sm:px-6 lg:px-8">
+        {/* 左：品牌 / 房间 pill / WS 状态 */}
+        <div className="flex min-w-0 items-center gap-2.5 sm:gap-3.5">
+          <div className="flex shrink-0 items-center gap-2.5">
+            <div className="flex size-9 items-center justify-center rounded-xl bg-slate-900 text-white shadow-sm transition-colors group-hover:bg-indigo-600 dark:bg-indigo-600">
+              <ClipboardCheck className="size-5" aria-hidden="true" />
+            </div>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-white">
+                MyClip
+              </span>
+              <span className="rounded-md border border-slate-200 bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
+                v2
+              </span>
+            </div>
+          </div>
 
-        <button
-          type="button"
-          onClick={onSwitchRoom}
-          className="flex min-w-0 cursor-pointer items-center gap-1 rounded-md border border-border bg-muted/50 px-2.5 py-1 text-sm transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
-          aria-haspopup="dialog"
-          aria-label={`当前房间 ${room}，点击切换`}
-        >
-          <Hash className="size-3.5 text-muted-foreground" aria-hidden="true" />
-          <span className="truncate font-medium">{room}</span>
-        </button>
-        <WsBadge status={wsStatus} />
+          <div className="hidden h-4 w-px bg-slate-200 dark:bg-slate-800 sm:block" />
 
-        <div className="ms-auto flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={onShare}
-            aria-label="分享房间"
+          {/* 房间切换 pill */}
+          <button
+            type="button"
+            onClick={onSwitchRoom}
+            className="group inline-flex min-w-0 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-slate-200/80 bg-slate-100 px-2.5 py-1.5 text-xs font-medium text-slate-700 transition-colors duration-150 hover:bg-slate-200/80 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 sm:px-3 sm:text-sm"
+            aria-haspopup="dialog"
+            aria-label={`当前房间 ${room}，点击切换`}
           >
-            <Share2 aria-hidden="true" />
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon-sm" aria-label="切换主题">
-                {theme === "system" ? (
-                  <MonitorSmartphone aria-hidden="true" />
-                ) : theme === "dark" ? (
-                  <MoonStar aria-hidden="true" />
-                ) : (
-                  <Sun aria-hidden="true" />
-                )}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => onThemeChange("system")}>
-                跟随系统{theme === "system" && <span className="ms-auto text-xs text-muted-foreground">✓</span>}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onThemeChange("dark")}>
-                暗色{theme === "dark" && <span className="ms-auto text-xs text-muted-foreground">✓</span>}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onThemeChange("light")}>
-                亮色{theme === "light" && <span className="ms-auto text-xs text-muted-foreground">✓</span>}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+            <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">
+              #
+            </span>
+            <span className="max-w-[84px] truncate sm:max-w-[140px]">{room}</span>
+            <ChevronDown
+              className="size-3.5 text-slate-400 transition-colors group-hover:text-slate-600 dark:group-hover:text-slate-200"
+              aria-hidden="true"
+            />
+          </button>
+
+          <WsBadge status={wsStatus} ping={wsPing} />
+        </div>
+
+        {/* 右：安装 / 分享 / 主题 */}
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+          {installSlot}
+          <HeaderButton onClick={onShare} title="扫码或复制链接跨设备加入房间">
+            <Share2 className="size-3.5" aria-hidden="true" />
+            <span className="hidden md:inline">分享房间</span>
+          </HeaderButton>
+          <button
+            type="button"
+            onClick={() => onThemeChange(isDark ? "light" : "dark")}
+            title="切换深色/浅色模式"
+            aria-label="切换主题"
+            className="inline-flex size-9 cursor-pointer items-center justify-center rounded-lg text-slate-500 transition-colors duration-150 hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+          >
+            {isDark ? (
+              <Sun className="size-4" aria-hidden="true" />
+            ) : (
+              <Moon className="size-4" aria-hidden="true" />
+            )}
+          </button>
         </div>
       </div>
     </header>

@@ -34,7 +34,7 @@ export function ShareDialog({
     QRCode.toDataURL(url, {
       margin: 1,
       width: 256,
-      color: { dark: "#18181b", light: "#ffffff" },
+      color: { dark: "#0f172a", light: "#ffffff" },
     })
       .then((u) => {
         if (alive) setDataUrl(u);
@@ -75,10 +75,10 @@ export function ShareDialog({
             <img
               src={dataUrl}
               alt={`房间 ${room} 链接二维码`}
-              className="size-52 rounded-md border border-border bg-white p-1"
+              className="size-52 rounded-2xl border border-slate-200 bg-white p-3 shadow-inner dark:border-slate-800"
             />
           ) : (
-            <div className="grid size-52 place-items-center rounded-md border border-border bg-muted text-xs text-muted-foreground">
+            <div className="grid size-52 place-items-center rounded-2xl border border-slate-200 bg-muted text-xs text-muted-foreground dark:border-slate-800">
               二维码生成中…
             </div>
           )}
