@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Github } from "lucide-react";
 import { Toaster, toast } from "sonner";
 import { useRoomRoute } from "@/hooks/use-room-route";
 import { useTheme } from "@/hooks/use-theme";
@@ -254,27 +253,6 @@ export default function App() {
           },
         }}
       />
-
-      <footer className="border-t border-slate-200/60 px-4 py-4 text-xs text-slate-400 dark:border-slate-800/70 dark:text-slate-500 sm:px-6 lg:px-8">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 sm:flex-row">
-          <div className="flex items-center gap-2">
-            <span className="font-semibold text-slate-600 dark:text-slate-300">
-              MyClip v2
-            </span>
-            <span aria-hidden="true">·</span>
-            <span>轻量级跨设备云剪贴板</span>
-          </div>
-          <a
-            href="https://github.com/wooxi/myclip-v2"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1 transition-colors hover:text-indigo-500"
-          >
-            <Github className="size-3.5" aria-hidden="true" />
-            <span>wooxi/myclip-v2</span>
-          </a>
-        </div>
-      </footer>
     </div>
   );
 }
