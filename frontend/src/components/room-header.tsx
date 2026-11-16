@@ -1,4 +1,5 @@
-import { ClipboardCheck, ChevronDown, Moon, Share2, Sun } from "lucide-react";
+import { ChevronDown, Moon, Share2, Sun } from "lucide-react";
+import { Logo } from "./logo";
 import type { WsStatus } from "@/api";
 import type { Theme } from "@/hooks/use-theme";
 import { cn } from "@/lib/utils";
@@ -101,9 +102,7 @@ export function RoomHeader({
         {/* 左：品牌 / 房间 pill / WS 状态 */}
         <div className="flex min-w-0 items-center gap-2.5 sm:gap-3.5">
           <div className="flex shrink-0 items-center gap-2.5">
-            <div className="flex size-9 items-center justify-center rounded-xl bg-slate-900 text-white shadow-sm transition-colors group-hover:bg-indigo-600 dark:bg-indigo-600">
-              <ClipboardCheck className="size-5" aria-hidden="true" />
-            </div>
+            <Logo className="size-9 shrink-0 rounded-xl shadow-sm" />
             <div className="flex items-baseline gap-1.5">
               <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-white">
                 MyClip

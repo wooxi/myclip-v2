@@ -1,8 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" fill="#09090b"/>
-  <g fill="none" stroke="#fafafa" stroke-width="28" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M256 130v170"/>
-    <path d="m180 220 76 76 76-76"/>
-    <path d="M145 345v30a20 20 0 0 0 20 20h182a20 20 0 0 0 20-20v-30"/>
-  </g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">
+  <!-- MyClip logo: single-stroke paper-clip curve on near-black -->
+  <rect width="40" height="40" fill="#0a0a0a"/>
+  <path d="M10 23.5 V12 a6 6 0 0 1 12 0 v9.5 a4 4 0 0 1 -8 0 V15"
+        fill="none" stroke="#fafafa" stroke-width="2.4" stroke-linecap="round"/>
 </svg>

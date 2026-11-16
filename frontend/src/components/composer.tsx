@@ -362,9 +362,6 @@ export function Composer({
             <Send aria-hidden="true" />
           )}
           发送
-          <kbd className="ms-1 hidden rounded-md border border-indigo-400/30 bg-indigo-700/80 px-1.5 py-0.5 font-mono text-[10px] text-indigo-100 sm:inline-block">
-            ⌘↵
-          </kbd>
         </Button>
       </div>
     </section>
