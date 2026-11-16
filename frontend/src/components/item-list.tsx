@@ -125,7 +125,6 @@ export function ItemList({
   query,
   onQueryChange,
   onFiles,
-  onPasteSend,
 }: {
   items: Item[] | null;
   loading: boolean;
@@ -137,7 +136,6 @@ export function ItemList({
   query: string;
   onQueryChange: (q: string) => void;
   onFiles: (files: File[]) => void;
-  onPasteSend: () => void;
 }) {
   if (error) {
     return (
@@ -181,12 +179,7 @@ export function ItemList({
       />
 
       {filtered.length === 0 ? (
-        <EmptyDropzone
-          onFiles={onFiles}
-          onPasteSend={onPasteSend}
-          empty={items.length === 0}
-          loading={loading}
-        />
+        <EmptyDropzone onFiles={onFiles} empty={items.length === 0} loading={loading} />
       ) : (
         <>
           <ul className="flex flex-col gap-3" aria-label="历史条目">
@@ -197,7 +190,7 @@ export function ItemList({
             ))}
           </ul>
           {/* 有内容时的矮条拖放区：仍可拖入文件 */}
-          <EmptyDropzone onFiles={onFiles} onPasteSend={onPasteSend} empty={false} loading={false} />
+          <EmptyDropzone onFiles={onFiles} empty={false} loading={false} />
         </>
       )}
     </div>

@@ -208,6 +208,7 @@ export default function App() {
               onTtlChange={setTtl}
               onCreated={prepend}
               onFilesChosen={handleFiles}
+              onPasteSend={() => void handlePasteSend()}
             />
           </section>
 
@@ -224,7 +225,6 @@ export default function App() {
               query={query}
               onQueryChange={setQuery}
               onFiles={handleFiles}
-              onPasteSend={() => void handlePasteSend()}
             />
           </section>
         </div>

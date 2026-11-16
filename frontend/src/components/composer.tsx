@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Clock3,
+  ClipboardPaste,
   CopyX,
   Link2,
   Loader2,
@@ -52,6 +53,7 @@ export function Composer({
   onTtlChange,
   onCreated,
   onFilesChosen,
+  onPasteSend,
 }: {
   room: string;
   config: AppConfig;
@@ -60,6 +62,8 @@ export function Composer({
   onCreated: (item: Item) => void;
   /** 把外部选择的文件交给父级（拖拽/粘贴直传入口） */
   onFilesChosen?: (files: File[]) => void;
+  /** 读取系统剪贴板并直接发送（文本→文本条目，文件→暂存直传） */
+  onPasteSend?: () => void;
 }) {
   const [text, setText] = useState("");
   const [staged, setStaged] = useState<StagedFile[]>([]);
@@ -341,15 +345,28 @@ export function Composer({
             e.target.value = "";
           }}
         />
-        <Button
-          variant="ghost"
-          size="lg"
-          className="border border-slate-200/80 bg-slate-100 text-slate-700 shadow-xs hover:bg-slate-200/80 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
-          onClick={() => fileInputRef.current?.click()}
-        >
-          <Upload className="text-slate-600 dark:text-slate-300" aria-hidden="true" />
-          选择文件
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="lg"
+            className="border border-slate-200/80 bg-slate-100 text-slate-700 shadow-xs hover:bg-slate-200/80 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <Upload className="text-slate-600 dark:text-slate-300" aria-hidden="true" />
+            选择文件
+          </Button>
+          {onPasteSend && (
+            <Button
+              variant="ghost"
+              size="lg"
+              className="border border-emerald-200/60 bg-emerald-50 text-emerald-600 shadow-xs hover:bg-emerald-100 dark:border-emerald-800/50 dark:bg-emerald-950/60 dark:text-emerald-300 dark:hover:bg-emerald-950/80"
+              onClick={onPasteSend}
+            >
+              <ClipboardPaste className="text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
+              <span className="hidden sm:inline">粘贴即发</span>
+            </Button>
+          )}
+        </div>
         <Button
           size="lg"
           onClick={() => void send()}

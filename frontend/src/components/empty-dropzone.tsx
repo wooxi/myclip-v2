@@ -1,26 +1,24 @@
 import { useRef, useState } from "react";
-import { ClipboardPaste, FilePlus2 } from "lucide-react";
+import { FilePlus2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
- * 拖放区：空状态为大区 + 双操作卡；有内容时收缩为矮条，仍可拖入。
+ * 拖放区：空状态为大区（纯图形化放置目标），有内容时收缩为矮条，仍可拖入。
  * dragenter/dragleave 计数法避免子元素抖动；drop 把文件交给回调。
+ * 文件选择与粘贴即发入口固定在左侧 Composer 操作条（不随条目增长移动）。
  */
 export function EmptyDropzone({
   onFiles,
-  onPasteSend,
   empty,
   loading,
 }: {
   onFiles: (files: File[]) => void;
-  onPasteSend: () => void;
   /** 房间完全无内容时展示大区，否则矮条 */
   empty: boolean;
   loading: boolean;
 }) {
   const [active, setActive] = useState(false);
   const counter = useRef(0);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const hasFiles = (e: DragEvent) =>
     Array.from(e.dataTransfer?.types ?? []).includes("Files");
@@ -65,11 +63,10 @@ export function EmptyDropzone({
     >
       {loading ? (
         <span className="size-6 animate-spin rounded-full border-2 border-border border-t-foreground" aria-label="加载中" role="status" />
-      ) : (
-        <div className="grid w-full max-w-lg grid-cols-1 gap-3.5 sm:grid-cols-2">
-          {/* 上传文件或图片 */}
+      ) : empty ? (
+        // 空状态：图形化放置目标（可点击进入文件选择，自解释入口）
+        <label className="group flex cursor-pointer flex-col items-center gap-4 rounded-2xl p-8 transition-colors duration-200 focus-within:outline-none focus-within:ring-[3px] focus-within:ring-ring/50">
           <input
-            ref={fileInputRef}
             type="file"
             multiple
             className="sr-only"
@@ -80,47 +77,16 @@ export function EmptyDropzone({
               e.target.value = "";
             }}
           />
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="group flex cursor-pointer items-center gap-3.5 rounded-2xl border border-slate-200/90 bg-card p-4 text-left transition-all duration-200 hover:border-indigo-500 hover:shadow-md focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-indigo-500 sm:flex-col sm:justify-center sm:p-6 sm:text-center"
-          >
-            <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 transition-all duration-200 group-hover:scale-110 group-hover:bg-indigo-600 group-hover:text-white dark:bg-indigo-950/80 dark:text-indigo-400">
-              <FilePlus2 className="size-6" aria-hidden="true" />
-            </div>
-            <div>
-              <div className="text-sm font-semibold text-slate-800 transition-colors group-hover:text-indigo-600 dark:text-slate-100 dark:group-hover:text-indigo-400">
-                上传文件或图片
-              </div>
-              <div className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">
-                支持拖拽上传 · 不限格式
-              </div>
-            </div>
-          </button>
-
-          {/* 粘贴剪贴板并发送 */}
-          <button
-            type="button"
-            onClick={onPasteSend}
-            className="group flex cursor-pointer items-center gap-3.5 rounded-2xl border border-slate-200/90 bg-card p-4 text-left transition-all duration-200 hover:border-emerald-500 hover:shadow-md focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-emerald-500 sm:flex-col sm:justify-center sm:p-6 sm:text-center"
-          >
-            <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 transition-all duration-200 group-hover:scale-110 group-hover:bg-emerald-600 group-hover:text-white dark:bg-emerald-950/80 dark:text-emerald-400">
-              <ClipboardPaste className="size-6" aria-hidden="true" />
-            </div>
-            <div>
-              <div className="text-sm font-semibold text-slate-800 transition-colors group-hover:text-emerald-600 dark:text-slate-100 dark:group-hover:text-emerald-400">
-                粘贴剪贴板并发送
-              </div>
-              <div className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">
-                一键读取系统剪贴板{" "}
-                <kbd className="rounded-md bg-slate-100 px-1 py-0.5 font-mono text-[10px] dark:bg-slate-800">
-                  Ctrl+V
-                </kbd>
-              </div>
-            </div>
-          </button>
-        </div>
-      )}
+          <div className="flex size-16 items-center justify-center rounded-2xl bg-slate-100 text-slate-300 transition-all duration-200 group-hover:scale-105 group-hover:bg-indigo-50 group-hover:text-indigo-400 dark:bg-slate-800 dark:text-slate-600 dark:group-hover:bg-indigo-950/80 dark:group-hover:text-indigo-400">
+            <FilePlus2 className="size-8" aria-hidden="true" />
+          </div>
+          <div className="flex gap-2 opacity-70 transition-opacity group-hover:opacity-100">
+            <div className="size-2 rounded-full bg-slate-300 dark:bg-slate-700" />
+            <div className="size-2 rounded-full bg-slate-300 dark:bg-slate-700" />
+            <div className="size-2 rounded-full bg-slate-300 dark:bg-slate-700" />
+          </div>
+        </label>
+      ) : null}
     </div>
   );
 }
