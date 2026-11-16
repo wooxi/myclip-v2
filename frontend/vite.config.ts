@@ -13,7 +13,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       // network-only：在线场景才有意义，离线只缓存静态壳
-      registerType: "prompt",
+      registerType: "autoUpdate",
       includeAssets: ["favicon.svg"],
       manifest: {
         id: "/",
