@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
 import { FilePlus2 } from "lucide-react";
 import { Toaster, toast } from "sonner";
-import { useRoomRoute } from "@/hooks/use-room-route";
+import { useAppRoute, type ToolId } from "@/hooks/use-room-route";
 import { useTheme } from "@/hooks/use-theme";
 import { useRoomItems } from "@/hooks/use-room-items";
 import { RoomHeader } from "@/components/room-header";
@@ -14,13 +14,20 @@ import { uploadFiles, clearAbort } from "@/lib/upload";
 import { api } from "@/api";
 import { DEFAULT_CONFIG, applyConfig, type AppConfig } from "@/app-config";
 import type { FilterGroup } from "@/lib/classify";
-import type { TtlValue } from "@/types";
+import type { Item, TtlValue } from "@/types";
 import { cn } from "@/lib/utils";
+
+const ToolsWorkspace = lazy(() =>
+  import("@/components/tools/tools-workspace").then((m) => ({
+    default: m.ToolsWorkspace,
+  })),
+);
 
 type MobileTab = "all" | "stream";
 
 export default function App() {
-  const { room, navigate } = useRoomRoute();
+  const { route, navigateRoom, setActiveRoom, navigateTools } = useAppRoute();
+  const room = route.room;
   const { theme, setTheme } = useTheme();
   const { items, error, wsStatus, wsPing, prepend, remove } = useRoomItems(room);
   const [roomDialogOpen, setRoomDialogOpen] = useState(false);
@@ -29,6 +36,7 @@ export default function App() {
   const [mobileTab, setMobileTab] = useState<MobileTab>("all");
   const [filter, setFilter] = useState<FilterGroup>("all");
   const [query, setQuery] = useState("");
+  const [pendingToolFiles, setPendingToolFiles] = useState<File[]>([]);
   // 首屏直接用默认值渲染，config 并行拉取，成功后热更新（失败静默保持默认）
   const [config, setConfig] = useState<AppConfig>(DEFAULT_CONFIG);
 
@@ -49,6 +57,7 @@ export default function App() {
       alive = false;
     };
   }, []);
+
   // 移动分段条仅 <768px 生效；回到桌面布局时重置同屏
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 768px)");
@@ -62,10 +71,9 @@ export default function App() {
   // 拖拽/粘贴批量上传时用 toast 显示分片进度（一个 toast 跟随整个批次）
   const progressToastId = useRef<string | number | null>(null);
 
-  // 拖拽/粘贴入口：批量提交，进度聚合到单个 toast
   const handleFiles = useCallback(
-    (files: File[]) => {
-      void uploadFiles(room, files, ttl, config, {
+    async (files: File[]) => {
+      await uploadFiles(room, files, ttl, config, {
         onCreated: prepend,
         onProgress: (file, percent) => {
           if (progressToastId.current === null) {
@@ -94,10 +102,15 @@ export default function App() {
     [room, ttl, config, prepend],
   );
 
-  // 全页级拖放：dragenter/leave 计数法 + fixed 覆盖层高亮，drop 统一走 handleFiles
+  // 全页级拖放仅在剪贴板视图激活，避免干扰工具箱内局部拖放区
   const [dragActive, setDragActive] = useState(false);
   const dragCounter = useRef(0);
   useEffect(() => {
+    if (route.section !== "clip") {
+      setDragActive(false);
+      dragCounter.current = 0;
+      return;
+    }
     const hasFiles = (e: DragEvent) =>
       Array.from(e.dataTransfer?.types ?? []).includes("Files");
     const onDragEnter = (e: DragEvent) => {
@@ -122,7 +135,7 @@ export default function App() {
       dragCounter.current = 0;
       setDragActive(false);
       const files = Array.from(e.dataTransfer?.files ?? []);
-      if (files.length) handleFiles(files);
+      if (files.length) void handleFiles(files);
     };
     document.addEventListener("dragenter", onDragEnter);
     document.addEventListener("dragover", onDragOver);
@@ -134,7 +147,7 @@ export default function App() {
       document.removeEventListener("dragleave", onDragLeave);
       document.removeEventListener("drop", onDrop);
     };
-  }, [handleFiles]);
+  }, [handleFiles, route.section]);
 
   /** 空状态"粘贴剪贴板并发送"：文本直接提交，剪贴板文件直传 */
   const handlePasteSend = useCallback(async () => {
@@ -160,7 +173,7 @@ export default function App() {
           );
         }
       }
-      if (files.length) handleFiles(files);
+      if (files.length) void handleFiles(files);
       else toast.info("剪贴板为空");
     } catch {
       toast.error("无法读取系统剪贴板");
@@ -186,96 +199,171 @@ export default function App() {
     [remove],
   );
 
+  /** 剪贴板条目直接导入工具箱 */
+  const handleSendItemToTool = useCallback(
+    async (item: Item, targetTool: ToolId) => {
+      const url = api.fileUrl(room, item);
+      if (!url) {
+        toast.error("该文件当前不可读取");
+        return;
+      }
+      const tid = toast.loading(`正在载入 ${item.fileName ?? "文件"}…`);
+      try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const blob = await res.blob();
+        const file = new File([blob], item.fileName ?? "file", {
+          type: item.mime || blob.type || "application/octet-stream",
+          lastModified: Date.now(),
+        });
+        setPendingToolFiles([file]);
+        navigateTools(targetTool);
+        toast.dismiss(tid);
+      } catch (e) {
+        toast.error(`载入失败：${e instanceof Error ? e.message : e}`, { id: tid });
+      }
+    },
+    [room, navigateTools],
+  );
+
+  const consumeInitialFiles = useCallback(() => {
+    setPendingToolFiles([]);
+  }, []);
+
+  const dispatchToolFiles = useCallback(
+    (files: File[], target: ToolId) => {
+      setPendingToolFiles(files);
+      navigateTools(target);
+    },
+    [navigateTools],
+  );
+
   return (
     <div className="flex min-h-dvh flex-col">
       <RoomHeader
+        section={route.section}
         room={room}
         wsStatus={wsStatus}
         wsPing={wsPing}
         theme={theme}
+        onSectionChange={(s) => {
+          if (s === "clip") navigateRoom(room);
+          else navigateTools(null);
+        }}
         onThemeChange={setTheme}
         onSwitchRoom={() => setRoomDialogOpen(true)}
         onShare={() => setShareDialogOpen(true)}
         installSlot={<InstallPrompt />}
       />
 
-      {/* <768px 双段切换条：同屏 / 仅接收流（+计数徽标） */}
-      <div className="border-b border-slate-200 bg-white px-4 py-2 dark:border-slate-800 dark:bg-slate-900 md:hidden">
-        <div className="grid grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
-          <button
-            type="button"
-            aria-pressed={mobileTab === "all"}
-            onClick={() => setMobileTab("all")}
-            className={cn(
-              "cursor-pointer rounded-lg py-1.5 text-xs transition-colors",
-              mobileTab === "all"
-                ? "bg-white font-semibold text-slate-900 shadow-sm dark:bg-slate-900 dark:text-white"
-                : "font-medium text-slate-600 dark:text-slate-400",
-            )}
-          >
-            发送与接收同屏
-          </button>
-          <button
-            type="button"
-            aria-pressed={mobileTab === "stream"}
-            onClick={() => setMobileTab("stream")}
-            className={cn(
-              "flex cursor-pointer items-center justify-center gap-1 rounded-lg py-1.5 text-xs transition-colors",
-              mobileTab === "stream"
-                ? "bg-white font-semibold text-slate-900 shadow-sm dark:bg-slate-900 dark:text-white"
-                : "font-medium text-slate-600 dark:text-slate-400",
-            )}
-          >
-            <span>仅看接收流</span>
-            <span className="rounded-full bg-indigo-100 px-1.5 py-0.5 text-[10px] text-indigo-600 dark:bg-indigo-900 dark:text-indigo-300">
-              {items?.length ?? 0}
-            </span>
-          </button>
-        </div>
-      </div>
+      {route.section === "clip" && (
+        <>
+          {/* <768px 双段切换条：同屏 / 仅接收流（+计数徽标） */}
+          <div className="border-b border-slate-200 bg-white px-4 py-2 dark:border-slate-800 dark:bg-slate-900 md:hidden">
+            <div className="grid grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
+              <button
+                type="button"
+                aria-pressed={mobileTab === "all"}
+                onClick={() => setMobileTab("all")}
+                className={cn(
+                  "cursor-pointer rounded-lg py-1.5 text-xs transition-colors",
+                  mobileTab === "all"
+                    ? "bg-white font-semibold text-slate-900 shadow-sm dark:bg-slate-900 dark:text-white"
+                    : "font-medium text-slate-600 dark:text-slate-400",
+                )}
+              >
+                发送与接收同屏
+              </button>
+              <button
+                type="button"
+                aria-pressed={mobileTab === "stream"}
+                onClick={() => setMobileTab("stream")}
+                className={cn(
+                  "flex cursor-pointer items-center justify-center gap-1 rounded-lg py-1.5 text-xs transition-colors",
+                  mobileTab === "stream"
+                    ? "bg-white font-semibold text-slate-900 shadow-sm dark:bg-slate-900 dark:text-white"
+                    : "font-medium text-slate-600 dark:text-slate-400",
+                )}
+              >
+                <span>仅看接收流</span>
+                <span className="rounded-full bg-indigo-100 px-1.5 py-0.5 text-[10px] text-indigo-600 dark:bg-indigo-900 dark:text-indigo-300">
+                  {items?.length ?? 0}
+                </span>
+              </button>
+            </div>
+          </div>
 
-      {/* 主区 12 栏：composer 5 栏 sticky + stream 7 栏（stretch 等高，空状态大区自动对齐） */}
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 pb-8 pt-5 sm:px-6 sm:pt-7 lg:px-8">
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-          <section
-            aria-label="发送"
-            className={cn(
-              "flex flex-col gap-4 lg:col-span-5 lg:sticky lg:top-24 lg:max-h-[calc(100vh-6.5rem)]",
-              mobileTab === "stream" && "max-md:hidden",
-            )}
+          {/* 主区 12 栏：composer 5 栏 sticky + stream 7 栏 */}
+          <main className="mx-auto w-full max-w-7xl flex-1 px-4 pb-8 pt-5 sm:px-6 sm:pt-7 lg:px-8">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+              <section
+                aria-label="发送"
+                className={cn(
+                  "flex flex-col gap-4 lg:col-span-5 lg:sticky lg:top-24 lg:max-h-[calc(100vh-6.5rem)]",
+                  mobileTab === "stream" && "max-md:hidden",
+                )}
+              >
+                <Composer
+                  room={room}
+                  config={config}
+                  ttl={ttl}
+                  onTtlChange={setTtl}
+                  onCreated={prepend}
+                  onFilesChosen={(fs) => void handleFiles(fs)}
+                  onPasteSend={() => void handlePasteSend()}
+                />
+              </section>
+
+              <section
+                aria-label="历史"
+                className="flex min-w-0 flex-col lg:col-span-7"
+              >
+                <h2 className="sr-only">历史条目</h2>
+                <ItemList
+                  items={items}
+                  error={error}
+                  onDeleted={remove}
+                  onClearAll={handleClearAll}
+                  filter={filter}
+                  onFilterChange={setFilter}
+                  query={query}
+                  onQueryChange={setQuery}
+                  onFiles={(fs) => void handleFiles(fs)}
+                  onSendToTool={(item, target) => void handleSendItemToTool(item, target)}
+                />
+              </section>
+            </div>
+          </main>
+        </>
+      )}
+
+      {route.section === "tools" && (
+        <main className="mx-auto w-full max-w-7xl flex-1 px-4 pb-8 pt-5 sm:px-6 sm:pt-7 lg:px-8">
+          <Suspense
+            fallback={
+              <div className="flex min-h-64 items-center justify-center" aria-busy="true">
+                <span
+                  className="size-6 animate-spin rounded-full border-2 border-border border-t-indigo-600"
+                  aria-label="加载中"
+                  role="status"
+                />
+              </div>
+            }
           >
-            <Composer
+            <ToolsWorkspace
+              tool={route.tool}
               room={room}
-              config={config}
-              ttl={ttl}
-              onTtlChange={setTtl}
-              onCreated={prepend}
-              onFilesChosen={handleFiles}
-              onPasteSend={() => void handlePasteSend()}
+              initialFiles={pendingToolFiles}
+              onSelectTool={(t) => navigateTools(t)}
+              onConsumeInitialFiles={consumeInitialFiles}
+              onDispatchDroppedFiles={dispatchToolFiles}
+              onSendToRoom={handleFiles}
             />
-          </section>
+          </Suspense>
+        </main>
+      )}
 
-          <section
-            aria-label="历史"
-            className="flex min-w-0 flex-col lg:col-span-7"
-          >
-            <h2 className="sr-only">历史条目</h2>
-            <ItemList
-              items={items}
-              error={error}
-              onDeleted={remove}
-              onClearAll={handleClearAll}
-              filter={filter}
-              onFilterChange={setFilter}
-              query={query}
-              onQueryChange={setQuery}
-              onFiles={handleFiles}
-            />
-          </section>
-        </div>
-      </main>
-
-      {/* 全页级拖放高亮覆盖层（pointer-events-none，drop 由 document 监听接收） */}
+      {/* 全页级拖放高亮覆盖层（仅剪贴板视图） */}
       {dragActive && (
         <div
           aria-hidden="true"
@@ -291,7 +379,7 @@ export default function App() {
         currentRoom={room}
         open={roomDialogOpen}
         onOpenChange={setRoomDialogOpen}
-        onJoin={(r) => navigate(r)}
+        onJoin={(r) => setActiveRoom(r)}
       />
       <ShareDialog
         room={room}

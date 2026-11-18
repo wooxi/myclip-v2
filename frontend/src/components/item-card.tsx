@@ -4,12 +4,17 @@ import {
   Copy,
   Download,
   ExternalLink,
+  FileImage,
+  FileText,
+  ImageDown,
   Laptop,
   Link2,
   Paperclip,
   SquarePen,
+  Stamp,
   Terminal,
   Trash2,
+  Wrench,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -21,11 +26,19 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/api";
 import type { Item } from "@/types";
+import type { ToolId } from "@/hooks/use-room-route";
 import { classifyItem, type ItemKind } from "@/lib/classify";
+import { isImageFile, isPdfFile } from "@/lib/file-utils";
 import { relativeTime } from "@/lib/relative-time";
 import { cn, formatBytes, formatCountdown } from "@/lib/utils";
 import { MarkdownText } from "./markdown-text";
@@ -92,7 +105,15 @@ function useNow(intervalMs = 10_000) {
   return now;
 }
 
-export function ItemCard({ item, onDeleted }: { item: Item; onDeleted: (id: string) => void }) {
+export function ItemCard({
+  item,
+  onDeleted,
+  onSendToTool,
+}: {
+  item: Item;
+  onDeleted: (id: string) => void;
+  onSendToTool?: (item: Item, tool: ToolId) => void;
+}) {
   const now = useNow();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -131,6 +152,8 @@ export function ItemCard({ item, onDeleted }: { item: Item; onDeleted: (id: stri
 
   const downloadName = item.fileName ?? "file";
   const fileUrl = item.kind === "file" ? api.fileUrl("", item) : "";
+  const fileAsImage = item.kind === "file" && isImageFile({ type: item.mime, name: downloadName });
+  const fileAsPdf = item.kind === "file" && isPdfFile({ type: item.mime, name: downloadName });
 
   return (
     <article
@@ -273,16 +296,78 @@ export function ItemCard({ item, onDeleted }: { item: Item; onDeleted: (id: stri
               </div>
             </div>
             {fileUrl !== "" && (
-              <Button size="sm" asChild className="shrink-0">
-                <a
-                  href={fileUrl}
-                  download={downloadName}
-                  aria-label={`下载 ${downloadName}`}
-                >
-                  <Download aria-hidden="true" />
-                  下载
-                </a>
-              </Button>
+              <div className="flex shrink-0 items-center gap-1.5">
+                {onSendToTool && (fileAsImage || fileAsPdf) && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        aria-label={`用工具处理 ${downloadName}`}
+                        title="用工具处理"
+                      >
+                        <Wrench aria-hidden="true" />
+                        <span className="hidden sm:inline">工具</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-44 rounded-xl p-1">
+                      {fileAsImage && (
+                        <>
+                          <DropdownMenuItem
+                            className="cursor-pointer rounded-lg text-xs"
+                            onSelect={() => onSendToTool(item, "watermark")}
+                          >
+                            <Stamp aria-hidden="true" />
+                            图片加水印
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="cursor-pointer rounded-lg text-xs"
+                            onSelect={() => onSendToTool(item, "image-convert")}
+                          >
+                            <ImageDown aria-hidden="true" />
+                            格式转换 / 压缩
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="cursor-pointer rounded-lg text-xs"
+                            onSelect={() => onSendToTool(item, "pdf-image")}
+                          >
+                            <FileText aria-hidden="true" />
+                            图片转 PDF
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                      {fileAsPdf && (
+                        <>
+                          <DropdownMenuItem
+                            className="cursor-pointer rounded-lg text-xs"
+                            onSelect={() => onSendToTool(item, "pdf-image")}
+                          >
+                            <FileImage aria-hidden="true" />
+                            PDF 转图片
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="cursor-pointer rounded-lg text-xs"
+                            onSelect={() => onSendToTool(item, "pdf-edit")}
+                          >
+                            <Stamp aria-hidden="true" />
+                            PDF 水印 / 合并拆分
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+                <Button size="sm" asChild>
+                  <a
+                    href={fileUrl}
+                    download={downloadName}
+                    aria-label={`下载 ${downloadName}`}
+                  >
+                    <Download aria-hidden="true" />
+                    下载
+                  </a>
+                </Button>
+              </div>
             )}
           </div>
         </>

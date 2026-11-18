@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import type { Item } from "@/types";
+import type { ToolId } from "@/hooks/use-room-route";
 import { classifyItem, inFilterGroup, type FilterGroup } from "@/lib/classify";
 import { cn } from "@/lib/utils";
 import { ItemCard } from "./item-card";
@@ -129,6 +130,7 @@ export function ItemList({
   query,
   onQueryChange,
   onFiles,
+  onSendToTool,
 }: {
   items: Item[] | null;
   error: string | null;
@@ -139,6 +141,7 @@ export function ItemList({
   query: string;
   onQueryChange: (q: string) => void;
   onFiles: (files: File[]) => void;
+  onSendToTool?: (item: Item, tool: ToolId) => void;
 }) {
   if (error) {
     return (
@@ -187,7 +190,7 @@ export function ItemList({
         <ul className="flex flex-col gap-3" aria-label="历史条目">
           {filtered.map((item) => (
             <li key={item.id}>
-              <ItemCard item={item} onDeleted={onDeleted} />
+              <ItemCard item={item} onDeleted={onDeleted} onSendToTool={onSendToTool} />
             </li>
           ))}
         </ul>

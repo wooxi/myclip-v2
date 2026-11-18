@@ -1,4 +1,4 @@
-import { ChevronDown, Moon, Share2, Sun } from "lucide-react";
+import { ChevronDown, ClipboardList, Moon, Share2, Sun, Wrench } from "lucide-react";
 import { Logo } from "./logo";
 import type { WsStatus } from "@/api";
 import type { Theme } from "@/hooks/use-theme";
@@ -36,8 +36,7 @@ function WsBadge({ status, ping }: { status: WsStatus; ping: number | null }) {
     rose: "bg-rose-500",
   }[tier];
   const tierMs = {
-    emerald:
-      "text-emerald-600/70 dark:text-emerald-400/70",
+    emerald: "text-emerald-600/70 dark:text-emerald-400/70",
     amber: "text-amber-600/70 dark:text-amber-400/70",
     rose: "text-rose-600/70 dark:text-rose-400/70",
   }[tier];
@@ -46,7 +45,9 @@ function WsBadge({ status, ping }: { status: WsStatus; ping: number | null }) {
       title="WebSocket 实时同步状态"
       className={cn(
         "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2 py-1 text-xs font-medium sm:px-2.5",
-        live ? tierText : "border-amber-200/70 bg-amber-50 text-amber-700 dark:border-amber-800/70 dark:bg-amber-950/60 dark:text-amber-300",
+        live
+          ? tierText
+          : "border-amber-200/70 bg-amber-50 text-amber-700 dark:border-amber-800/70 dark:bg-amber-950/60 dark:text-amber-300",
       )}
     >
       <span className="relative flex h-2 w-2">
@@ -58,9 +59,9 @@ function WsBadge({ status, ping }: { status: WsStatus; ping: number | null }) {
           )}
         />
       </span>
-      <span className="hidden sm:inline">{label}</span>
+      <span className="hidden lg:inline">{label}</span>
       {live && ping !== null && (
-        <span className={cn("hidden font-mono text-[11px] md:inline", tierMs)}>
+        <span className={cn("hidden font-mono text-[11px] xl:inline", tierMs)}>
           {ping}ms
         </span>
       )}
@@ -91,19 +92,23 @@ function HeaderButton({
 }
 
 export function RoomHeader({
+  section,
   room,
   wsStatus,
   wsPing,
   theme,
+  onSectionChange,
   onThemeChange,
   onSwitchRoom,
   onShare,
   installSlot,
 }: {
+  section: "clip" | "tools";
   room: string;
   wsStatus: WsStatus;
   wsPing: number | null;
   theme: Theme;
+  onSectionChange: (s: "clip" | "tools") => void;
   onThemeChange: (t: Theme) => void;
   onSwitchRoom: () => void;
   onShare: () => void;
@@ -118,9 +123,14 @@ export function RoomHeader({
   return (
     <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/85 backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/85">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-2 px-4 sm:px-6 lg:px-8">
-        {/* 左：品牌 / 房间 pill / WS 状态 */}
-        <div className="flex min-w-0 items-center gap-2.5 sm:gap-3.5">
-          <div className="flex shrink-0 items-center gap-2.5">
+        {/* 左：品牌 / 导航切换 / 房间 pill / WS 状态 */}
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+          <button
+            type="button"
+            onClick={() => onSectionChange("clip")}
+            className="flex shrink-0 cursor-pointer items-center gap-2.5 rounded-xl focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            aria-label="回到剪贴板"
+          >
             <Logo className="size-9 shrink-0 rounded-xl shadow-sm" />
             <div className="hidden items-baseline gap-1.5 sm:flex">
               <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-white">
@@ -130,29 +140,64 @@ export function RoomHeader({
                 v2
               </span>
             </div>
-          </div>
+          </button>
 
           <div className="hidden h-4 w-px bg-slate-200 dark:bg-slate-800 sm:block" />
+
+          {/* 模块分段切换：剪贴板 / 工具箱 */}
+          <nav
+            aria-label="主导航"
+            className="inline-flex shrink-0 items-center gap-0.5 rounded-xl bg-slate-100 p-1 dark:bg-slate-800"
+          >
+            <button
+              type="button"
+              aria-current={section === "clip" ? "page" : undefined}
+              onClick={() => onSectionChange("clip")}
+              className={cn(
+                "inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs transition-colors duration-150 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 sm:px-3",
+                section === "clip"
+                  ? "bg-white font-semibold text-slate-900 shadow-xs dark:bg-slate-900 dark:text-white"
+                  : "font-medium text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100",
+              )}
+            >
+              <ClipboardList className="size-3.5" aria-hidden="true" />
+              <span>剪贴板</span>
+            </button>
+            <button
+              type="button"
+              aria-current={section === "tools" ? "page" : undefined}
+              onClick={() => onSectionChange("tools")}
+              className={cn(
+                "inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs transition-colors duration-150 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 sm:px-3",
+                section === "tools"
+                  ? "bg-white font-semibold text-slate-900 shadow-xs dark:bg-slate-900 dark:text-white"
+                  : "font-medium text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100",
+              )}
+            >
+              <Wrench className="size-3.5" aria-hidden="true" />
+              <span>工具箱</span>
+            </button>
+          </nav>
 
           {/* 房间切换 pill */}
           <button
             type="button"
             onClick={onSwitchRoom}
-            className="group inline-flex min-w-0 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-slate-200/80 bg-slate-100 px-2.5 py-1.5 text-xs font-medium text-slate-700 transition-colors duration-150 hover:bg-slate-200/80 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 sm:px-3 sm:text-sm"
+            className="group inline-flex min-w-0 shrink-0 cursor-pointer items-center gap-1 rounded-full border border-slate-200/80 bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700 transition-colors duration-150 hover:bg-slate-200/80 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 sm:gap-1.5 sm:px-3 sm:py-1.5 sm:text-sm"
             aria-haspopup="dialog"
             aria-label={`当前房间 ${room}，点击切换`}
           >
             <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">
               #
             </span>
-            <span className="max-w-[84px] truncate sm:max-w-[140px]">{room}</span>
+            <span className="max-w-[56px] truncate sm:max-w-[120px]">{room}</span>
             <ChevronDown
               className="size-3.5 text-slate-400 transition-colors group-hover:text-slate-600 dark:group-hover:text-slate-200"
               aria-hidden="true"
             />
           </button>
 
-          <WsBadge status={wsStatus} ping={wsPing} />
+          {section === "clip" && <WsBadge status={wsStatus} ping={wsPing} />}
         </div>
 
         {/* 右：安装 / 分享 / 主题 */}

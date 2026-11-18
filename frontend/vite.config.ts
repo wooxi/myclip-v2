@@ -47,6 +47,8 @@ export default defineConfig({
       workbox: {
         // network-only 数据策略：只缓存静态资源壳，不缓存 API/WS
         runtimeCaching: [],
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+        globIgnores: ["**/pdf.worker*"],
         navigateFallback: "/index.html",
         navigateFallbackDenylist: [/^\/api\//],
       },
